@@ -1,0 +1,32 @@
+{
+  "transactions": [
+    {
+      "id": "939aef2a-f286-4d54-a8e4",
+      "applicationName": "App1",
+      "email": "user1@example.com",
+      "filename": "file1.pdf",
+      "inception": "2022-01-01",
+      "amount": 100,
+      "allocation": 50,
+      "url": "https://example.com"
+    },
+    {
+      "id": "817c923f-59b5-49d1-b519",
+      "applicationName": "App2",
+      "email": "user2@example.com",
+      "filename": "file2.png",
+      "inception": "2022-01-02",
+      "amount": 200,
+      "allocation": 25
+    },
+    {
+      "id": "48bbd97c-556b-4a26-8fa9",
+      "applicationName": "App3",
+      "email": "user3@example.com",
+      "filename": "file3.xls",
+      "inception": "2022-01-03",
+      "amount": 300,
+      "allocation": 75
+    }
+  ]
+}
