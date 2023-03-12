@@ -1,7 +1,7 @@
 import { ValidatorFn, AbstractControl, ValidationErrors } from '@angular/forms';
 
 export function pastDateValidator(): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
+  return (control: AbstractControl<string>): ValidationErrors | null => {
     const date = control.value;
     if (!date) {
       return null;

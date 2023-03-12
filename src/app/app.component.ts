@@ -1,6 +1,13 @@
-import { Component, OnInit } from '@angular/core';
-import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
-import { Transaction } from './models/transaction.model';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import {
+  AbstractControl,
+  FormArray,
+  FormControl,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
+import { Subject, takeUntil } from 'rxjs';
+import { Transaction, TransactionDataColumn } from './models/transaction.model';
 import { TransactionService } from './services/transaction.service';
 import { pastDateValidator } from './validators/past-date.validator';
 import { validExtensionsValidator } from './validators/valid-extensions.validator';
@@ -11,35 +18,40 @@ import { validExtensionsValidator } from './validators/valid-extensions.validato
   styleUrls: ['./app.component.scss'],
   providers: [TransactionService],
 })
-export class AppComponent implements OnInit {
-  columns: {
-    field: keyof Transaction;
-    header: string;
-    isReadonly?: boolean;
-  }[] = [
-    { field: 'id', header: 'ID', isReadonly: true },
-    { field: 'applicationName', header: 'Application Name' },
-    { field: 'email', header: 'Email' },
-    { field: 'inception', header: 'Inception' },
-    { field: 'amount', header: 'Amount' },
-    { field: 'filename', header: 'Filename' },
-    { field: 'url', header: 'URL' },
-    { field: 'allocation', header: 'Allocation' },
+export class AppComponent implements OnInit, OnDestroy {
+  columns: TransactionDataColumn[] = [
+    { field: 'id', header: 'ID', type: 'text', isReadonly: true },
+    { field: 'applicationName', header: 'Application Name', type: 'text' },
+    { field: 'email', header: 'Email', type: 'text' },
+    { field: 'inception', header: 'Inception', type: 'date' },
+    { field: 'amount', header: 'Amount', type: 'number' },
+    { field: 'filename', header: 'Filename', type: 'text' },
+    { field: 'url', header: 'URL', type: 'text' },
+    { field: 'allocation', header: 'Allocation', type: 'number' },
   ];
 
   form!: FormGroup;
+  private destroyed$ = new Subject<void>();
 
   constructor(private readonly transcactionService: TransactionService) {}
+
+  ngOnDestroy(): void {
+    this.destroyed$.next();
+    this.destroyed$.complete();
+  }
 
   ngOnInit(): void {
     this.form = new FormGroup({
       transactions: new FormArray([]),
     });
-    this.transcactionService.getTransactions().subscribe((data) => {
-      data.forEach((transaction) => {
-        this.transactions.push(this.createTransactionItem(transaction));
+    this.transcactionService
+      .getTransactions()
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((data) => {
+        data.forEach((transaction) => {
+          this.transactions.push(this.createTransactionItem(transaction));
+        });
       });
-    });
   }
 
   get transactions(): FormArray {
@@ -62,8 +74,16 @@ export class AppComponent implements OnInit {
     this.transactions.removeAt(index);
   }
 
-  async save(index: number) {
+  save(index: number) {
     const transaction = this.transactions.at(index).value as Transaction;
+    if (transaction.id) {
+      this.update(transaction);
+    } else {
+      this.saveNew(transaction, index);
+    }
+  }
+
+  async saveNew(transaction: Transaction, index: number) {
     await this.transcactionService
       .saveTransaction(transaction)
       .then((data) => {
@@ -71,6 +91,17 @@ export class AppComponent implements OnInit {
       })
       .catch((error) => {
         this.removeTransaction(index);
+      });
+  }
+
+  async update(transaction: Transaction) {
+    await this.transcactionService
+      .updateTransaction(transaction)
+      .then(() => {
+        // TODO: display success message
+      })
+      .catch((error) => {
+        // TODO: rollback changes
       });
   }
 
@@ -84,10 +115,11 @@ export class AppComponent implements OnInit {
       email: new FormControl(transaction.email, [
         Validators.required,
         Validators.maxLength(200),
+        Validators.email,
       ]),
       inception: new FormControl(transaction.inception, [
         Validators.required,
-        pastDateValidator,
+        pastDateValidator(),
       ]),
       amount: new FormControl(transaction.amount, Validators.required),
       filename: new FormControl(transaction.filename, [
@@ -103,5 +135,9 @@ export class AppComponent implements OnInit {
         Validators.max(100),
       ]),
     });
+  }
+
+  trackByFn(index: number, control: AbstractControl<Transaction>): string {
+    return control.value.id;
   }
 }

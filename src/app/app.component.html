@@ -11,29 +11,26 @@
     </thead>
     <tbody appMoveFocus formArrayName="transactions">
       <tr
-        *ngFor="let transaction of transactions.controls; let i = index"
+        *ngFor="
+          let transaction of transactions.controls;
+          let i = index;
+          trackBy: trackByFn
+        "
         [formGroupName]="i"
       >
         <td *ngFor="let col of columns">
-          <!-- <ng-container [ngSwitch]="col.field">
-            <div *ngSwitchCase="'inception'">
-              <input type="date" [formControlName]="col.field" />
-            </div>
-            <div *ngSwitchCase="'amount'">
-              <input type="number" [formControlName]="col.field" />
-            </div>
-            <div *ngSwitchDefault> -->
           <input
-            type="text"
+            [type]="col.type"
             [readOnly]="col.isReadonly"
             [formControlName]="col.field"
           />
-          <!-- </div>
-          </ng-container> -->
         </td>
         <td>
           <button (click)="removeTransaction(i)">Delete</button>
-          <button [disabled]="transaction.invalid" (click)="save(i)">
+          <button
+            [disabled]="transaction.invalid || !transaction.dirty"
+            (click)="save(i)"
+          >
             Save
           </button>
         </td>

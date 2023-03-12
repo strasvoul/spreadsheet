@@ -8,3 +8,10 @@ export interface Transaction {
   url?: string;
   allocation?: number;
 }
+
+export type TransactionDataColumn = {
+  field: keyof Transaction;
+  header: string;
+  type: string;
+  isReadonly?: boolean;
+};
