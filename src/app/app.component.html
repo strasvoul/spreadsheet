@@ -1,5 +1,5 @@
-<div [formGroup]="form">
-  <button (click)="addTransaction()">Add Transaction</button>
+<button (click)="addTransaction()">Add Transaction</button>
+<div [formGroup]="form" style="overflow: auto">
   <table>
     <thead>
       <tr>
@@ -10,29 +10,40 @@
       </tr>
     </thead>
     <tbody appMoveFocus formArrayName="transactions">
+      <!-- TODO: add trackBy: trackByFn -->
       <tr
-        *ngFor="
-          let transaction of transactions.controls;
-          let i = index;
-          trackBy: trackByFn
-        "
+        *ngFor="let transaction of transactions.controls; let i = index"
         [formGroupName]="i"
       >
         <td *ngFor="let col of columns">
-          <input
-            [type]="col.type"
-            [readOnly]="col.isReadonly"
-            [formControlName]="col.field"
-          />
+          <ng-container [ngSwitch]="col.type">
+            <ng-container *ngSwitchCase="'number'">
+              <input
+                appInputArrowControl
+                [type]="col.type"
+                [readOnly]="col.isReadonly"
+                [formControlName]="col.field"
+              />
+            </ng-container>
+            <ng-container *ngSwitchDefault>
+              <input
+                [type]="col.type"
+                [readOnly]="col.isReadonly"
+                [formControlName]="col.field"
+              />
+            </ng-container>
+          </ng-container>
         </td>
         <td>
-          <button (click)="removeTransaction(i)">Delete</button>
-          <button
-            [disabled]="transaction.invalid || !transaction.dirty"
-            (click)="save(i)"
-          >
-            Save
-          </button>
+          <div class="action-buttons">
+            <button (click)="removeTransaction(i)">Delete</button>
+            <button
+              [disabled]="transaction.invalid || !transaction.dirty"
+              (click)="save(i)"
+            >
+              Save
+            </button>
+          </div>
         </td>
       </tr>
     </tbody>

@@ -1,4 +1,10 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import {
   AbstractControl,
   FormArray,
@@ -17,6 +23,7 @@ import { validExtensionsValidator } from './validators/valid-extensions.validato
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   providers: [TransactionService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit, OnDestroy {
   columns: TransactionDataColumn[] = [
@@ -33,12 +40,10 @@ export class AppComponent implements OnInit, OnDestroy {
   form!: FormGroup;
   private destroyed$ = new Subject<void>();
 
-  constructor(private readonly transcactionService: TransactionService) {}
-
-  ngOnDestroy(): void {
-    this.destroyed$.next();
-    this.destroyed$.complete();
-  }
+  constructor(
+    private readonly transcactionService: TransactionService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.form = new FormGroup({
@@ -51,6 +56,7 @@ export class AppComponent implements OnInit, OnDestroy {
         data.forEach((transaction) => {
           this.transactions.push(this.createTransactionItem(transaction));
         });
+        this.cdr.detectChanges();
       });
   }
 
@@ -75,12 +81,14 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   save(index: number) {
-    const transaction = this.transactions.at(index).value as Transaction;
+    const control = this.transactions.at(index);
+    const transaction = control.value as Transaction;
     if (transaction.id) {
       this.update(transaction);
     } else {
       this.saveNew(transaction, index);
     }
+    control.markAsPristine();
   }
 
   async saveNew(transaction: Transaction, index: number) {
@@ -138,6 +146,13 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   trackByFn(index: number, control: AbstractControl<Transaction>): string {
+    // TODO: identtify which field (unique) should be used for tracking
+    // cause id doesn't exist for new transactions
     return control.value.id;
+  }
+
+  ngOnDestroy(): void {
+    this.destroyed$.next();
+    this.destroyed$.complete();
   }
 }
